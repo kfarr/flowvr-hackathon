@@ -1,0 +1,14 @@
+<html>
+<body>
+<script src="../js/sounds.js"></script>
+<script>
+	var sounds = new Sounds("../");
+	sounds.play("targeted", true);
+
+	window.addEventListener("click", function() {
+		sounds.stop("targeted");
+		sounds.play("killed");
+	});
+</script>
+</body>
+</html>

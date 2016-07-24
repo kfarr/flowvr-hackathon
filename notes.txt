@@ -1,0 +1,356 @@
+
+
+DEBUGGING SERVER SIDE:
+
+* Start the node server.js app
+* open "http://localhost:8080/tests/connectiontest.html" (replace localhost with your local IP)
+* You will be logged as a new player and should see that in your node console
+* You can then manually run commands in your browser console
+* Open up multiple tabs to see how server responds differently depending on your player id / role
+* Here are a few examples that you can paste into your browser console:
+
+var command = {
+	id: "dodge",
+	data: {
+		id: "2",
+		}
+	};
+connection.sendCommand(command);
+
+var command = {
+  id: "kill",
+	data: {
+	  victim_id: "1",
+		killer_id: "2"
+	}
+};
+connection.sendCommand(command);
+
+HIGHEST
+kill
+	- kill mechanic -> just die
+	- respawn (killResponse)
+dodge - NO TIME
+AR
+	-
+
+Score:
+KF- tally score
+IKER- adapt player to show their score
+
+
+KIERAN EXPERIMENT
+- "nice name"
+	- comp.local
+	- arena.flow -> local IP
+- throw together instructions
+
+
+
+
+
+
+IDEAS:
+
+* God mode viewer
+* Solo mode
+* Multiplayer (cooperative)
+* AI
+* Tutorial: Dodging Vs shooting (two stages)
+* Other kind of gestures/events
+
+PROPOSALS
+
+* Lets try to work in parallel. For that, defining some basic elements could be a good idea. Is true that it might make us "loose" some time, but it might also be good for learning purposes. The idea is to be able to integrate the whole project easily once one part is done but still work independently enough so we do not rely on each other's work to be done to advance. Basic things we might need.
+
+- An easy abstraction of the communication layer. This way, we can mock whatever we need. For example, we can fake the reception of commands from the server to create players on our own "locally" but still use the same code that will provide the commands to do it once the protocol and the server are up and working. We can create fake clients too that send information with a hit of a key for example in order to continue developing/verifying that the server logic works well.
+- The 3D stuff: background and avatar creation at least. It will help Jason and I work in the client
+
+PROTOCOL
+
+* Client accesses for the first time. Provide a website back to be able to start. This page allows to be a player or a viewer (the code of the page will look for the AR extension and if it present, it will allow to specify a 3D viewer or an AR viewer).
+
+NOTE: Lets try to minimize the data interchange and the data manipulation in the server. If we can reuse a command to send the same information from the client to the server and back, just do it. Garbage collection can also impact on performance.
+
+PROBLEM THAT NEEDS TO BE SOLVED: How can the server identify whose connection is receiving to uniquely identify the client among the list/array of clients that is has?
+
+* Client wants to be a player. Sends a "player" command to the server with no data.
+
+{
+	id: "createPlayer"
+}
+
+Server responds with a "player" command back:
+
+{
+	id: "createPlayerResponse",
+	data: {
+		id: X,
+		position: { x: 0, y: 0, z: 0 },
+		otherPlayers : {
+			"X": {
+				position: { x: 0, y: 0, z: 0 },
+				orientation: { x: 0, y: 0, z: 0, w: 1 }
+			},
+			"Y": {
+				position: { x: 0, y: 0, z: 0 },
+				orientation: { x: 0, y: 0, z: 0, w: 1 }
+			}
+		}
+	}
+}
+
+The client creates the universe and the corresponding players (including himself).
+The server also sends a "newPlayer" command to all the other clients that are already connected.
+
+{
+	id: "newPlayer",
+	data: {
+		id: "x",
+		position: { x: 0, y: 0, z: 0 }
+	}
+}
+
+Other clients create the corresponding player.
+
+
+* Client wants to be a viewer. Sends a "viewer" command to the server with no data.
+
+{
+	id: "createViewer"
+}
+
+Server responds with a "player" command back:
+
+{
+	id: "createViewerResponse",
+	data: {
+		otherPlayers :
+			"X": {
+				position: { x: 0, y: 0, z: 0 },
+				orientation: { x: 0, y: 0, z: 0, w: 1 }
+			},
+			"Y": {
+				position: { x: 0, y: 0, z: 0 },
+				orientation: { x: 0, y: 0, z: 0, w: 1 }
+			}
+		]
+	}
+}
+
+
+
+* The client sends his orientation and position in everyframe (maybe we can skip 1 frame?)
+
+{
+	id: "status",
+	data: {
+		id: "x",
+		position: { x: 0, y: 0, z: 0 },
+		orientation: { x: 0, y: 0, z: 0, w: 1 }
+	}
+}
+
+* The server receives the status and sends it to every other player (skipping the index of the player that send his status)
+
+{
+	id: "status",
+	data: {
+		id: "x",
+		position: { x: 0, y: 0, z: 0 },
+		orientation: { x: 0, y: 0, z: 0, w: 1 }
+	}
+}
+
+Clients update the corresponding avatars status.
+
+* The server detects that a client has disconnected and it sends a command to every other player:
+
+{
+	id: "disconnected",
+	data: {
+		id: "x"
+	}
+}
+
+The server frees the index of the disconnected player so it can be used for another player that might want to play in the future.
+The client removes the player from the scene.
+
+
+
+* The client detects a dodge
+
+{
+	id: "dodge",
+	data: {
+		id: "playerId"
+	}
+}
+
+The server sends the event to all other clients -- not to the client who sent it
+{
+	id: "dodge",
+	data: {
+		id: "playerId"
+	}
+}
+
+All of the clients update the position of the specific client that has dodged.
+
+* The client detects a kill and sending to server
+{
+  id: "kill",
+	data: {
+	  victim_id: "playerId",
+		killer_id: "playerId"
+	}
+}
+
+Server sends this event to all other clients, both playerId's provided to keep score
+{
+  id: "kill",
+	data: {
+	  victim_id: "playerId",
+		killer_id: "playerId"
+	}
+}
+
+- Server should respawn the user who killed
+{
+  status: "killResponse",
+	data: {
+		position: {x:0, y:0, z:0}
+	}
+}
+
+
+
+IDEAS:
+- Skip every other frame not to send our position 60 FPS.
+- Let the server send the status of every client once only when all of then have sent it. We could even wait to send any other messages that arrived during this wait. Just send messages when all the clients have updated their status. Just send one big message
+
+/// BEGIN CAREFUL! INCORRECT!!!!!!
+{
+	id: "commands",
+	data: [
+		{
+			id: "playersStatus",
+			data: [
+				{
+					index: X,
+					position: { x: 0, y: 0, z: 0 },
+					orientation: { x: 0, y: 0, z: 0, w: 1 }
+				},
+				{
+					index: Y,
+					position: { x: 0, y: 0, z: 0 },
+					orientation: { x: 0, y: 0, z: 0, w: 1 }
+				},
+				{
+					index: Z,
+					position: { x: 0, y: 0, z: 0 },
+					orientation: { x: 0, y: 0, z: 0, w: 1 }
+				},
+			]
+		}
+	]
+
+		players:
+	}
+}
+
+* The client starts aiming to another player (picking)
+
+{
+	id: "aimStart",
+	data: {
+		shooterId: "x",
+		targetId: "y",
+		hitPosition: { x: 0, y: 0, z: 0 }
+	}
+}
+
+The server sends the notification to all the clients
+
+{
+	id: "aimStart",
+	data: {
+		shooterId: "x",
+		targetId: "y",
+		hitPosition: { x: 0, y: 0, z: 0 }
+	}
+}
+
+The client that is being targeted, starts a sound.
+All the clients have to show some visual feedback. (invisible sphere or a quad with a transparent )
+
+* The client stops aiming to another player (picking is lost)
+
+{
+	id: "aimStop",
+	data: {
+		shooterId: "x",
+		targetId: "y",
+	}
+}
+
+The server sends the notification to all of the other players.
+
+{
+	id: "aimStop",
+	data: {
+		shooterId: "x",
+		targetId: "y",
+	}
+}
+
+The client stops the targeting feedback.
+/// END CAREFUL! INCORRECT!!!!!!
+
+
+SERVER
+
+* Keep a maximum number of clients.
+* Keep the definition of the 3D space to be able to set the initial and respawn position for each player.
+
+CLIENT
+
+player = {
+	id: "x"
+	socket: null,
+	mesh: null
+}
+
+
+TASKS
+
+* The whole protocol handling of the server
+* The initial page to select player or viewer (3D or AR).
+* The dodge algorithm and the timing for shooting/dodging.
+* The background sphere visualization.
+* The viewer handling: 3D and AR
+* The avatar
+	- Model
+	- VR movement
+	- Crossair and picking with laser charging
+
+
+GRADIENT SOURCES
+
+http://angrytools.com/gradient/?23_FCCD4D,100_FBDF93,34_F8B500,73_CE7D40&0_100,100_100&l_270
+gradientSky20x512.png
+
+http://angrytools.com/gradient/?26_83C783,100_39d64c,33_4FB052,61_008a00,0_B4DD01,79_005700,93_002400&0_100,100_100&l_270
+gradientAvatarGreen20x64.png
+
+http://angrytools.com/gradient/?17_aac5de,100_26558b,50_6199c7,51_3a84c3,0_cedbe9,59_419ad6,71_4bb8f0,84_3a8bc2&0_100,100_100&l_270
+gradientAvatarCyan20x64.png
+
+http://angrytools.com/gradient/?0_FF0000,25_800000,100_ff0000,56_660000,49_ff0000,80_C20000&0_100,100_100&l_270
+gradientAvatarRed20x64.png
+
+http://angrytools.com/gradient/?20_DE00CB,36_4D238C,100_C700BA,51_A511BF,0_BA00E8,59_D61ED3,80_7B0C91,65_c700ba&0_100,100_100&l_270
+gradientAvatarPurple20x64.png
+
+http://angrytools.com/gradient/?19_0C07A3,36_120B52,100_0000C7,51_0016BF,0_0800E8,56_0F55D6,80_000880&0_100,100_100&l_270
+gradientAvatarBlue20x64.png

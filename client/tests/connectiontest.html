@@ -1,0 +1,59 @@
+<html>
+<body>
+<script src="../js/connection.js"></script>
+<script>
+
+var connection = new Connection();
+connection.connect({
+	url: "ws://localhost:1337",
+	onConnected: function() {
+		console.log("Connected!");
+		var command = {
+			id: "createPlayer",
+			data: {
+				name: "Iker"
+			}
+		};
+		this.sendCommand(command);
+	},
+	onDisconnected: function() {
+		console.log("Disconnected!");
+	},
+	onError: function(message) {
+		console.error(message);
+	},
+	onCommandReceived: function(command) {
+		console.log(JSON.stringify(command));
+	}
+});
+
+</script>
+<h1>Connection Debug</h1>
+<h3>Open your js console</h3>
+<p>This page uses the same connection.js as the game to instantiate a player with the server and then keep the websocket connection open so that you can try out different commands.</p>
+<p>These are examples of command snippets you can paste in your console to emulate different player commands. See notes.txt for more detailed explanation of commands to use between players and websocket server.</p>
+<p><code>
+var command = {
+	id: "dodge",
+	data: {
+		id: "2",
+		}
+	};
+connection.sendCommand(command);
+</code></p>
+<p>Look on your node server console to see the response. You should see something like "PLAYER 2 dodged the laser".</p>
+<p><code>
+var command = {
+  id: "kill",
+	data: {
+	  victim_id: "1",
+		killer_id: "2"
+	}
+};
+connection.sendCommand(command);
+</code></p>
+<code>
+	var command = { id: "score" };
+	connection.sendCommand(command);
+</body>
+</html>

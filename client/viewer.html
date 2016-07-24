@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - geometry - cube</title>
+		<meta charset="utf-8">
+<!--		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"> -->
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+    <script>
+        var SERVER_IP = "10.60.223.81";
+    </script>
+
+    <script src="libs/arvuforiautils.js"></script>
+    <script>
+    var s = document.createElement("script");
+    s.async = false;
+    if (window.ext && window.ext.ARVuforia) {
+    	s.src = "libs/three.min.67.js";
+    }
+    else {
+    	s.src = "libs/three.min.74.js";
+    }
+    document.body.appendChild(s);
+    </script>
+    <script src="libs/tween.min.js"></script>
+
+    <script src="libs/FirstPersonControls.js"></script>
+    <script src="js/viewerapp.js"></script>
+    <script src="js/connection.js"></script>
+
+    <script src="js/avatar.js"></script>
+    <script src="js/environment.js"></script>
+
+    </body>
+</html>
